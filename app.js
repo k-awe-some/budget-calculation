@@ -91,52 +91,67 @@
 
 /* BUDGET (DATA) CONTROLLER */
 let budgetController = (function() { // todo list
-  let types = [];
   let descriptions = [];
   let incomes = [];
   return {
-    displayIncomes: function() {
-
-    },
-
-    addIncome: function(type, description, value) {
-      types.push(type);
+    addInput: function(description, value) {
       descriptions.push(description);
       incomes.push(value);
-      return `${type} ${descriptions} ${incomes}`;
+      return ` ${descriptions} ${incomes}`;
     }
   }
 })();
 
 /* UI CONTROLLER */
 let uiController = (function() { // view
-  let incomeItem = document.createElement('li');
-  let incomeList = document.querySelector('.income__list');
-  // incomeList.innerHTML = '';
+  // create an obj to store DOM elements
+  let DOMstrings = {
+    inputType: '.add__type',
+    inputDescription: '.add__description',
+    inputValue: '.add__value',
+    inputButton: '.add__btn',
+  }
 
   return {
-    getInput: function() {
-      return {
-        type: document.querySelector('.add__type').value,
-        description: document.querySelector('.add__description').value,
-        value: document.querySelector('.add__value').value,
-      }
+    // return DOMstrings into the public
+    getDOMstrings: function() {
+        return DOMstrings;
     },
 
-    // displayInput: function(input) {
-    //   incomeItem.textContent = input;
-    //   incomeList.appendChild(incomeItem);
-    // }
+    getInput: function() {
+      return {
+        type: document.querySelector(DOMstrings.inputType).value,
+        description: document.querySelector(DOMstrings.inputDescription).value,
+        value: document.querySelector(DOMstrings.inputValue).value,
+      };
+    },
+
+    displayInput: function() {
+      return {
+        incomeList: document.querySelector('.income__list'),
+        expensesList: document.querySelector('.expenses__list'),
+      }
+    }
   }
 })();
 
 /* GLOBAL APP CONTROLLER */
 let appController = (function(data, ui) { // handler
-  let input = ui.getInput();
 
   let addItemCtrl = function() {
-    let addItem = data.addIncome(input.description, input.value);
-    console.log(addItem);
+    let input = ui.getInput();
+    let displayInput = ui.displayInput();
+    let newInput = document.createElement('li');
+
+    if (input.type === 'exp') {
+      newInput.textContent = `${input.description} ${input.value}`;
+      displayInput.expensesList.appendChild(newInput);
+    }
+
+    if (input.type === 'inc') {
+      newInput.textContent = `${input.description} ${input.value}`;
+      displayInput.incomeList.appendChild(newInput);
+    }
   };
 
 
@@ -146,6 +161,6 @@ let appController = (function(data, ui) { // handler
       addItemCtrl();
     }
   });
-  document.querySelector('.add__btn').addEventListener('click', addItemCtrl);
+  document.querySelector(ui.getDOMstrings.inputButton).addEventListener('click', addItemCtrl);
 
 })(budgetController, uiController);
