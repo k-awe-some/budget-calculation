@@ -1,105 +1,61 @@
-// /* INCOME */
-// let incomeList = {
-//   // It should store incomes
-//   incomes: [],
-//
-//   // It should display incomes and total incomes
-//   displayIncomes: function() {
-//     console.log(this.incomes);
-//     console.log(this.totalIncomes());
-//   },
-//
-//   // It should add new income
-//   addIncome: function(value) {
-//     this.incomes.push({
-//       incomeValue: value,
-//     });
-//     this.displayIncomes();
-//   },
-//
-//   // It should edit income
-//   editIncome: function(position, value) {
-//     this.incomes[position].incomeValue = value;
-//     this.displayIncomes();
-//   },
-//
-//   // It should delete income
-//   deleteIncome: function(position) {
-//     this.incomes.splice(position, 1);
-//     this.displayIncomes();
-//   },
-//
-//   // It should total up incomes
-//   totalIncomes: function() {
-//     let result = 0;
-//     this.incomes.forEach(function(value) {
-//       result += value.incomeValue;
-//     });
-//     return result;
-//   }
-// }
-//
-// /* EXPENSES */
-// let expenseList = {
-//   // It should store expenses
-//   expenses: [],
-//
-//   // It should display expenses and total expenses
-//   displayExpenses: function() {
-//     console.log(this.expenses);
-//     console.log(this.totalExpenses());
-//   },
-//
-//   // It should add new expense
-//   addExpense: function(value) {
-//     this.expenses.push({
-//       expenseValue: value
-//     });
-//     this.displayExpenses();
-//   },
-//
-//   // It should edit expense
-//   editExpense: function(position, value) {
-//     this.expenses[position].expenseValue = value;
-//     this.displayExpenses();
-//   },
-//
-//   // It should delete expense
-//   deleteExpense: function(position) {
-//     this.expenses.splice(position, 1);
-//     this.displayExpenses();
-//   },
-//
-//   // It should total up expenses
-//   totalExpenses: function() {
-//     let result = 0;
-//     this.expenses.forEach(function(value) {
-//       result += value.expenseValue;
-//     });
-//     return result;
-//   }
-// };
-//
-// /* AVAILABLE BUDGET */
-// // It should show (incomes - expenses)
-// let incomes = incomeList.totalIncomes();
-// let expenses = expenseList.totalExpenses();
-// let availableBudget = function() {
-//   return incomes - expenses;
-// }
-// console.log(availableBudget());
-
 /* BUDGET (DATA) CONTROLLER */
-let budgetController = (function() { // todo list
-  let descriptions = [];
-  let incomes = [];
-  return {
-    addInput: function(description, value) {
-      descriptions.push(description);
-      incomes.push(value);
-      return ` ${descriptions} ${incomes}`;
+let budgetController = (function() { // data
+
+  // create function constructors as there will be lots of incomes and expenses
+  let Income = function(id, description, value) {
+    this.id = id;
+    this.description = description;
+    this.value = value;
+  };
+
+  let Expense = function(id, description, value) {
+    this.id = id;
+    this.description = description;
+    this.value = value;
+  };
+
+  let data = {
+    allItems: {
+      inc: [],
+      exp: [],
+    },
+
+    total: {
+      inc: 0,
+      exp: 0,
     }
-  }
+  };
+
+  return {
+    addInput: function(type, des, val) {
+      let newInput;
+      let ID;
+
+      // create new ID
+      if (data.allItems[type].length > 0) {
+        ID = data.allItems[type][data.allItems[type].length - 1].id + 1;
+      } else {
+        ID = 0;
+      }
+
+      // create new item based on 'inc' or 'exp' type
+      if (type === 'inc') {
+        newInput = new Income(ID, des, val);
+      } else if (type === 'exp') {
+        newInput = new Expense(ID, des, val);
+      }
+
+      // push it into data structure
+      // then return new element
+      data.allItems[type].push(newInput);
+      return newInput;
+    },
+
+    test: function() {
+      console.log(this.addInput());
+    }
+  };
+
 })();
 
 /* UI CONTROLLER */
@@ -110,57 +66,111 @@ let uiController = (function() { // view
     inputDescription: '.add__description',
     inputValue: '.add__value',
     inputButton: '.add__btn',
+    incomeList: '.income__list',
+    expensesList: '.expenses__list',
+    itemDescription: 'item__description',
+    itemDelete: 'item__delete',
   }
 
   return {
     // return DOMstrings into the public
     getDOMstrings: function() {
-        return DOMstrings;
+      return DOMstrings;
     },
 
+    // return input info into the public
     getInput: function() {
       return {
         type: document.querySelector(DOMstrings.inputType).value,
         description: document.querySelector(DOMstrings.inputDescription).value,
-        value: document.querySelector(DOMstrings.inputValue).value,
+        value: parseFloat(document.querySelector(DOMstrings.inputValue).value), // parseFloat converts string into number with decimal
       };
     },
 
-    displayInput: function() {
-      return {
-        incomeList: document.querySelector('.income__list'),
-        expensesList: document.querySelector('.expenses__list'),
+    // return display lists into the public
+    addListItem: function(obj, type) {
+      let html, newHtml, element;
+
+      // create html string with placeholder text
+      if (type === 'inc') {
+        element = DOMstrings.incomeList;
+        html = `<div class="item clearfix" id="income-%id%"> <div class="item__description">%description%</div> <div class="right clearfix"> <div class="item__value">%value%</div> <div class="item__delete"> <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div> </div> </div>`
+      } else if (type === 'exp') {
+        element = DOMstrings.expensesList;
+        html = `<div class="item clearfix" id="expense-%id%"> <div class="item__description">%description%</div> <div class="right clearfix"> <div class="item__value">%value%</div> <div class="item__percentage">21%</div> <div class="item__delete"> <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div> </div> </div>`
       }
-    }
+
+      // replace placeholder text with actual data
+      newHtml = html.replace('%id%', obj.id);
+      newHtml = newHtml.replace('%description%', obj.description);
+      newHtml = newHtml.replace('%value%', obj.value);
+
+      // insert html into DOM ('beforeend' = as the last child)
+      document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
+    },
+
+    clearFields: function() {
+      // 'querySelectorAll' returns a list, not an array
+      let fields = document.querySelectorAll(`${DOMstrings.inputDescription}, ${DOMstrings.inputValue}`);
+
+      // 'slice' returns an array when called
+      let fieldsArray = Array.prototype.slice.call(fields);
+
+      fieldsArray.forEach(function(currentField, index, array) {
+        currentField.value = '';
+      });
+
+      // reset focus to 'description' field
+      fieldsArray[0].focus();
+    },
   }
 })();
 
 /* GLOBAL APP CONTROLLER */
 let appController = (function(data, ui) { // handler
 
+  let setupEventListener = function() {
+    let DOM = ui.getDOMstrings();
+
+    document.addEventListener('keydown', function(e) {
+      if (e.keyCode === 13) {
+        addItemCtrl();
+      }
+    });
+    document.querySelector(DOM.inputButton).addEventListener('click', addItemCtrl);
+  };
+
   let addItemCtrl = function() {
     let input = ui.getInput();
-    let displayInput = ui.displayInput();
-    let newInput = document.createElement('li');
-
-    if (input.type === 'exp') {
-      newInput.textContent = `${input.description} ${input.value}`;
-      displayInput.expensesList.appendChild(newInput);
-    }
-
-    if (input.type === 'inc') {
-      newInput.textContent = `${input.description} ${input.value}`;
-      displayInput.incomeList.appendChild(newInput);
+    // make sure description does not contain spaces at the beginning
+    input.description = input.description.replace(/^\s*/, '');
+    if (input.description !== '' && !isNaN(input.value) && input.value > 0) {
+      // add item to data (budgetController)
+      let newItem = data.addInput(input.type, input.description, input.value);
+      // add item to ui
+      ui.addListItem(newItem, input.type);
+      // clear fields
+      ui.clearFields();
+      // update budget
+      updateBudget();
     }
   };
 
+  let updateBudget = function() {
+    // calculate budget
+    // return budget
+    // display budget in ui
+  }
 
-  // what happens on 'enter' and 'click'
-  document.addEventListener('keydown', function(e) {
-    if (e.keyCode === 13) {
-      addItemCtrl();
+  // init() stores all the code we want to execute when the app starts
+  // to be called in the publlic
+  return {
+    init: function() {
+      console.log('App has started');
+      setupEventListener();
     }
-  });
-  document.querySelector(ui.getDOMstrings.inputButton).addEventListener('click', addItemCtrl);
+  };
 
 })(budgetController, uiController);
+
+appController.init();
