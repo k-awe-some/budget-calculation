@@ -1,11 +1,13 @@
 /***************** BUDGET (DATA) CONTROLLER *****************/
 /*
- * Independent functions that manipulate data
+ * Independent functions that manipulate the data
  * Returns (into public) an object with the following methods:
- *    addInput()      - adds new input using Constructors
- *    deleteItem()    - deletes item using map() and splice() to get ID
- *    calcBudget()    - calculates total inc, total exp, available budget, %
- *    getBudget()     - returns an object with total inc, total exp, available budget, % properties
+ *    addInput()        - adds new input using Constructors
+ *    deleteItem()      - deletes item using map() and splice() to get ID
+ *    calcBudget()      - calculates total inc, total exp, available budget, %
+ *    getBudget()       - returns an object with total inc, total exp, available budget, % properties
+ *    calcPercentages() - calculate all expense item percentages
+ *    getPercentages()  - returns all expense item percentages into an array
  */
 let budgetController = (function() {
 
@@ -20,7 +22,22 @@ let budgetController = (function() {
     this.id = id;
     this.description = description;
     this.value = value;
+    this.percentage = -1;
   };
+
+  // create method in Constructor Expense to calculate each item percentage
+  // this method takes a totalIncome as a parameter
+  Expense.prototype.calcPercentage = function(totalIncome) {
+    if (totalIncome > 0) {
+      this.percentage = Math.round((this.value / totalIncome) * 100);
+    } else {
+      this.percentage = -1;
+    }
+  };
+  // create method in Constructor Expense to return each item percentage
+  Expense.prototype.getPercentage = function() {
+    return this.percentage;
+  }
 
   // store data in an obj
   let data = {
@@ -46,6 +63,7 @@ let budgetController = (function() {
   };
 
   return {
+    // add input to data structure
     addInput: function(type, des, val) {
       let newInput;
       let ID;
@@ -67,6 +85,7 @@ let budgetController = (function() {
       return newInput;
     },
 
+    // delete item from data structure
     deleteItem: function(id, type) {
       let IDs, index;
       // retrieve the indexes of all elements
@@ -80,6 +99,7 @@ let budgetController = (function() {
       }
     },
 
+    // calculate budget summaries
     calcBudget: function() {
       // calculate totals
       calcTotal('inc');
@@ -95,6 +115,7 @@ let budgetController = (function() {
       }
     },
 
+    // get buget summaries
     getBudget: function() {
       return {
         budget: data.budget,
@@ -102,6 +123,19 @@ let budgetController = (function() {
         totalExp: data.total.exp,
         percentage: data.percentage,
       };
+    },
+
+    // calculate then return all the percentages into an array (allPercentages)
+    calcPercentages: function() {
+      data.allItems.exp.forEach(function(currentItem) {
+        currentItem.calcPercentage(data.total.inc);
+      });
+    },
+    getPercentages: function() {
+      let allPercentages = data.allItems.exp.map(function(currentItem) {
+        return currentItem.getPercentage();
+      });
+      return allPercentages;
     },
   };
 
@@ -111,14 +145,15 @@ let budgetController = (function() {
 /*
  * Independent functions that manipulate the UI
  * Returns (into public) an object with the following methods:
- *    getDOMstrings()     - returns DOM class names
- *    getInput()          - get vallues from input fields
- *    addListItem()       - manipulates HTML to add item to the corresponding list depending on the type
- *    deleteListItem()    - manipulates HTML to delete item (using removeChild)
- *    clearFields()       - clears input fields after item was added
- *    displayBudget()     - displays budget, total income, total expenses, percentage
+ *    getDOMstrings()           - returns DOM class names
+ *    getInput()                - get vallues from input fields
+ *    addListItem()             - manipulates HTML to add item to the corresponding list depending on the type
+ *    deleteListItem()          - manipulates HTML to delete item (using removeChild)
+ *    clearFields()             - clears input fields after item was added
+ *    displayBudget()           - displays budget, total income, total expenses, percentage
+ *    displayItemPercentages()  - displays expense item percentages
  */
-let uiController = (function() {
+let uiController = (function() { // view
   // create an obj to store DOM elements
   let DOMstrings = {
     inputType: '.add__type',
@@ -133,6 +168,7 @@ let uiController = (function() {
     expPercentage: '.budget__expenses--percentage',
     container: '.container',
     deleteBtn: '.ion-ios-close-outline',
+    itemPercentage: '.item__percentage',
   }
 
   return {
@@ -204,6 +240,15 @@ let uiController = (function() {
         document.querySelector(DOMstrings.expPercentage).textContent = `---`
       }
     },
+
+    // display expense percentages
+    displayItemPercentages: function(percentages) {
+      // grab all the 'node' elements the change each node's textContent
+      let nodeList = document.querySelectorAll(DOMstrings.itemPercentage);
+      for (i = 0; i < nodeList.length; i++) {
+        nodeList[i].textContent = percentages[i] + '%';
+      }
+    },
   }
 })();
 
@@ -216,9 +261,10 @@ let uiController = (function() {
  *    addItemCtrl()           - adds input to data structure then to UI list
  *    deleteItemCtrl()        - deletes clicked item from data structure then from UI list
  *    updateBudget()          - re-calculate and display budget after changes (if any)
+ *    updateItemPercentages() - re-calculate and display expense item percentages after changes (if any)
  * Returns (into public) an object containing method init() that initializes uiController.displayBudget() & appController.setupEventListener()
  */
-let appController = (function(data, ui) {
+let appController = (function(data, ui) { // handler
   // stores all addEventListeners in one place
   let setupEventListener = function() {
     let DOM = ui.getDOMstrings();
@@ -244,6 +290,8 @@ let appController = (function(data, ui) {
       ui.clearFields();
       // update budget
       updateBudget();
+      // update item percentages
+      updateItemPercentages();
     }
   };
 
@@ -263,6 +311,8 @@ let appController = (function(data, ui) {
     ui.deleteListItem(itemIDclicked);
     // update and show new budget
     updateBudget();
+    // update item percentages
+    updateItemPercentages();
   };
 
   // update budget
@@ -273,6 +323,15 @@ let appController = (function(data, ui) {
     let budget = data.getBudget();
     // display budget in ui
     ui.displayBudget(budget);
+  };
+
+  let updateItemPercentages = function() {
+    // calculate item percentage
+    data.calcPercentages();
+    // read item percentage from data
+    let percentages = data.getPercentages();
+    // update ui
+    ui.displayItemPercentages(percentages);
   };
 
   // init() stores all the code we want to execute when the app starts
