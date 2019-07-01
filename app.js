@@ -169,7 +169,25 @@ let uiController = (function() { // view
     container: '.container',
     deleteBtn: '.ion-ios-close-outline',
     itemPercentage: '.item__percentage',
-  }
+  };
+
+  // create a function to format currency number
+  let formatNumber = function(num, type) {
+    let numSplit, integer, decimal, sign;
+    // get the absolute value then fix to 2 decimal points
+    num = Math.abs(num); // 1234.5678
+    num = num.toFixed(2); // 1234.57
+    // split integer and decimal parts to add separator ',' for thousands
+    numSplit = num.split('.'); // ['1234', '57']
+    integer = numSplit[0]; // '1234'
+    decimal = numSplit[1]; // '57'
+    if (integer.length > 3) {
+      integer = integer.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1' + ','); //
+    }
+    // determine sign
+    sign = (type === 'exp') ? '-' : '+';
+    return `${sign} ${integer}.${decimal}`;
+  };
 
   return {
     // return DOMstrings into the public
@@ -182,7 +200,7 @@ let uiController = (function() { // view
       return {
         type: document.querySelector(DOMstrings.inputType).value,
         description: document.querySelector(DOMstrings.inputDescription).value,
-        value: parseFloat(document.querySelector(DOMstrings.inputValue).value), // parseFloat converts string into number with decimal
+        value: Math.abs(parseFloat(document.querySelector(DOMstrings.inputValue).value)), // parseFloat converts string into number with decimal
       };
     },
 
@@ -202,7 +220,7 @@ let uiController = (function() { // view
       // replace placeholder text with actual data
       newHtml = html.replace('%id%', obj.id);
       newHtml = newHtml.replace('%description%', obj.description);
-      newHtml = newHtml.replace('%value%', obj.value);
+      newHtml = newHtml.replace('%value%', formatNumber(obj.value, type));
 
       // insert html into DOM ('beforeend' = as the last child)
       document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
@@ -230,9 +248,13 @@ let uiController = (function() { // view
 
     // display budget summaries
     displayBudget: function(obj) {
-      document.querySelector(DOMstrings.budgetValue).textContent = obj.budget;
-      document.querySelector(DOMstrings.totalIncValue).textContent = obj.totalInc;
-      document.querySelector(DOMstrings.totalExpValue).textContent = obj.totalExp;
+      // determine '+' or '-' for budgetVue display
+      let type;
+      type = (obj.budget > 0) ? 'inc' : 'exp';
+
+      document.querySelector(DOMstrings.budgetValue).textContent = formatNumber(obj.budget, type);
+      document.querySelector(DOMstrings.totalIncValue).textContent = formatNumber(obj.totalInc, 'inc');
+      document.querySelector(DOMstrings.totalExpValue).textContent = formatNumber(obj.totalExp, 'exp');
 
       if (obj.percentage > 0) {
         document.querySelector(DOMstrings.expPercentage).textContent = `${obj.percentage}%`;
@@ -249,6 +271,7 @@ let uiController = (function() { // view
         nodeList[i].textContent = percentages[i] + '%';
       }
     },
+
   }
 })();
 
