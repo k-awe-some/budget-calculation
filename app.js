@@ -146,6 +146,7 @@ let budgetController = (function() {
  * Independent functions that manipulate the UI
  * Returns (into public) an object with the following methods:
  *    getDOMstrings()           - returns DOM class names
+ *    changeType()              - toggle between green/red depending on type
  *    getInput()                - get vallues from input fields
  *    addListItem()             - manipulates HTML to add item to the corresponding list depending on the type
  *    deleteListItem()          - manipulates HTML to delete item (using removeChild)
@@ -171,6 +172,9 @@ let uiController = (function() { // view
     deleteBtn: '.ion-ios-close-outline',
     itemPercentage: '.item__percentage',
     dateLabel: '.budget__title--month',
+    addButton: '.add__btn',
+    redFocus: 'red-focus',
+    redOutline: 'red',
   };
 
   // create a function to format currency number
@@ -195,6 +199,20 @@ let uiController = (function() { // view
     // return DOMstrings into the public
     getDOMstrings: function() {
       return DOMstrings;
+    },
+
+    // change border color when type changes
+    changeType: function() {
+      let fields = document.querySelectorAll(
+        `${DOMstrings.inputType},
+        ${DOMstrings.inputDescription},
+        ${DOMstrings.inputValue}`
+      );
+      // toggle red when type changes
+      fields.forEach(function(currentNode) {
+        currentNode.classList.toggle(DOMstrings.redFocus);
+      });
+      document.querySelector(DOMstrings.addButton).classList.toggle(DOMstrings.redOutline);
     },
 
     // return input info into the public
@@ -276,6 +294,7 @@ let uiController = (function() { // view
     // display current month and year
     displayMonth: function() {
       let now = new Date();
+
       function getMonthName(date) {
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         return monthNames[date.getMonth()];
@@ -310,6 +329,7 @@ let appController = (function(data, ui) { // handler
     });
     document.querySelector(DOM.inputButton).addEventListener('click', addItemCtrl);
     document.querySelector(DOM.container).addEventListener('click', deleteItemCtrl);
+    document.querySelector(DOM.inputType).addEventListener('change', ui.changeType);
   };
 
   let addItemCtrl = function() {
