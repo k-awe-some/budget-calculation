@@ -152,6 +152,7 @@ let budgetController = (function() {
  *    clearFields()             - clears input fields after item was added
  *    displayBudget()           - displays budget, total income, total expenses, percentage
  *    displayItemPercentages()  - displays expense item percentages
+ *    displayMonth()            - display current month and year
  */
 let uiController = (function() { // view
   // create an obj to store DOM elements
@@ -169,6 +170,7 @@ let uiController = (function() { // view
     container: '.container',
     deleteBtn: '.ion-ios-close-outline',
     itemPercentage: '.item__percentage',
+    dateLabel: '.budget__title--month',
   };
 
   // create a function to format currency number
@@ -248,9 +250,8 @@ let uiController = (function() { // view
 
     // display budget summaries
     displayBudget: function(obj) {
-      // determine '+' or '-' for budgetVue display
-      let type;
-      type = (obj.budget > 0) ? 'inc' : 'exp';
+      // determine '+' or '-' for budgetValue display
+      let type = (obj.budget > 0) ? 'inc' : 'exp';
 
       document.querySelector(DOMstrings.budgetValue).textContent = formatNumber(obj.budget, type);
       document.querySelector(DOMstrings.totalIncValue).textContent = formatNumber(obj.totalInc, 'inc');
@@ -272,6 +273,17 @@ let uiController = (function() { // view
       }
     },
 
+    // display current month and year
+    displayMonth: function() {
+      let now = new Date();
+      function getMonthName(date) {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return monthNames[date.getMonth()];
+      };
+      let month = getMonthName(now);
+      let year = now.getFullYear();
+      document.querySelector(DOMstrings.dateLabel).textContent = `${month}, ${year}`;
+    },
   }
 })();
 
@@ -285,7 +297,7 @@ let uiController = (function() { // view
  *    deleteItemCtrl()        - deletes clicked item from data structure then from UI list
  *    updateBudget()          - re-calculate and display budget after changes (if any)
  *    updateItemPercentages() - re-calculate and display expense item percentages after changes (if any)
- * Returns (into public) an object containing method init() that initializes uiController.displayBudget() & appController.setupEventListener()
+ * Returns (into public) an object containing method init() that initializes uiController.displayMonth(), uiController.displayBudget() & appController.setupEventListener()
  */
 let appController = (function(data, ui) { // handler
   // stores all addEventListeners in one place
@@ -362,6 +374,7 @@ let appController = (function(data, ui) { // handler
   return {
     init: function() {
       console.log('App has started');
+      ui.displayMonth();
       ui.displayBudget({ // sets everything to 0 at the beginning
         budget: 0,
         totalInc: 0,
